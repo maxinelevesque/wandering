@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Deus ex Machina — a walking garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0a0b12; --ivory:#ece6d8; --ash:#9a9488; --ash-dim:#5f5b53;
+    --lantern:#f0cd86; --lantern-dim:#c9a560; --moss:#7f9a80; --moss-dim:#5d7460; --sakura:#d98fa0;
+    --serif:"EB Garamond",Georgia,serif; --display:"EB Garamond",Georgia,serif;
+    --mono:"EB Garamond",Georgia,serif; --hebrew:"Frank Ruhl Libre","EB Garamond",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;overflow:hidden;background:var(--night);}
+  body{font-family:var(--serif);color:var(--ivory);-webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;position:fixed;inset:0;}
+  #viewport{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:grab;
+    user-select:none;-webkit-user-select:none;
+    background:radial-gradient(140% 110% at 50% 46%, #13121c 0%, #0a0b12 56%, #050509 100%);}
+  #viewport.grabbing{cursor:grabbing;}
+  #world{position:absolute;inset:0;}
+  #gfx{position:absolute;left:0;top:0;}
+  .vignette{position:fixed;inset:0;z-index:6;pointer-events:none;
+    background:radial-gradient(130% 120% at 50% 48%, transparent 52%, rgba(0,0,0,.62) 100%);}
+
+  .frag{position:absolute;left:0;top:0;transform:translate(-50%,-50%);opacity:0;pointer-events:none;will-change:opacity,transform;
+    width:min(78vw,300px);padding:32px 34px;
+    background:radial-gradient(ellipse 76% 74% at 50% 50%, rgba(7,7,12,.85) 0%, rgba(7,7,12,.5) 46%, rgba(7,7,12,0) 76%);}
+  .frag.text{font:400 clamp(15.5px,3.9vw,17.5px)/1.62 var(--serif);color:#ded8ca;}
+  .frag.text em{color:var(--lantern);font-style:italic;}
+  .frag.lede{font:400 clamp(19px,4.7vw,24px)/1.4 var(--display);font-style:italic;color:var(--ivory);width:min(80vw,340px);}
+  .frag.heb{font:500 clamp(44px,11vw,76px)/1 var(--hebrew);color:#dfe7d8;text-align:center;width:auto;
+    text-shadow:0 0 30px rgba(127,154,128,.3);}
+  .frag.tr{font:400 clamp(15px,3.8vw,18px)/1 var(--mono);font-style:italic;color:var(--moss);
+    letter-spacing:2px;text-align:center;width:auto;}
+  .frag.reading{font:400 clamp(14.5px,3.7vw,16.5px)/1.58 var(--serif);color:#d4cfc2;width:min(76vw,300px);}
+  .frag.reading .rn{font-family:var(--display);font-style:italic;font-size:1.34em;color:var(--lantern);font-weight:600;
+    display:block;margin-bottom:4px;letter-spacing:.4px;}
+  .frag.grotto{font:400 italic clamp(13px,3.4vw,14.5px)/1.55 var(--serif);color:var(--moss);width:min(68vw,270px);
+    padding:26px 30px;
+    background:radial-gradient(ellipse 78% 76% at 50% 50%, rgba(8,11,9,.84) 0%, rgba(8,11,9,.46) 48%, rgba(8,11,9,0) 78%);}
+  .frag.grotto .gn{font-family:var(--mono);font-style:normal;font-size:.82em;letter-spacing:1px;color:var(--moss-dim);display:block;margin-bottom:7px;}
+  .frag.vlabel{font:500 italic clamp(12px,3.1vw,13.5px)/1.4 var(--display);letter-spacing:2px;text-transform:uppercase;color:var(--lantern-dim);width:min(62vw,230px);text-align:center;}
+  .frag.vlabel .vk{display:block;font-size:1.5em;letter-spacing:0;margin-bottom:2px;color:var(--lantern);}
+  .frag.outlink{font:400 clamp(13px,3.4vw,15px)/1.42 var(--display);color:var(--ash);width:min(64vw,250px);text-align:center;}
+  .frag.outlink .ok{display:block;font-style:normal;font-size:.7em;letter-spacing:3px;text-transform:uppercase;color:var(--lantern-dim);margin-bottom:8px;}
+  .frag.outlink .ot{font-size:1.62em;font-style:italic;color:var(--lantern);letter-spacing:.3px;}
+  .frag.outlink .os{display:block;font-size:.82em;font-style:italic;color:var(--moss);margin-top:7px;}
+  .frag.heading{width:auto;text-align:center;
+    background:radial-gradient(ellipse 92% 88% at 50% 50%, rgba(7,7,12,.9) 0%, rgba(7,7,12,.5) 52%, rgba(7,7,12,0) 80%);}
+  .heading .hw{font:600 clamp(38px,9.5vw,70px)/0.96 var(--display);font-style:italic;color:var(--ivory);letter-spacing:1px;}
+  .heading .hr{width:60px;height:1px;margin:15px auto 0;background:linear-gradient(90deg,transparent,var(--lantern-dim),transparent);}
+  .frag.title{width:min(90vw,450px);text-align:center;
+    background:radial-gradient(ellipse 86% 84% at 50% 50%, rgba(7,7,12,.9) 0%, rgba(7,7,12,.55) 50%, rgba(7,7,12,0) 80%);}
+  .title .tkick{font:500 11px/1 var(--mono);letter-spacing:5px;text-transform:uppercase;color:var(--lantern-dim);margin-bottom:14px;}
+  .title .tttl{font:600 clamp(38px,9vw,64px)/0.97 var(--display);font-style:italic;color:var(--ivory);letter-spacing:.5px;}
+  .title .tby{font:400 11px/1.6 var(--mono);color:var(--ash);letter-spacing:.4px;margin-top:18px;}
+  .title .tgo{font:500 11px/1 var(--mono);letter-spacing:3px;text-transform:uppercase;color:var(--lantern);margin-top:24px;animation:breathe 3.6s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{opacity:.42}50%{opacity:1}}
+  .petal{position:fixed;top:-30px;z-index:5;pointer-events:none;width:9px;height:9px;border-radius:0 100% 0 100%;background:var(--sakura);opacity:0;animation:fall linear infinite;}
+  @keyframes fall{0%{transform:translateY(-30px) translateX(0) rotate(0)}8%{opacity:.24}92%{opacity:.15}100%{transform:translateY(108vh) translateX(80px) rotate(220deg);opacity:0}}
+  .ripple{transform-box:fill-box;transform-origin:center;opacity:0;animation:ripple 8s ease-out infinite;}
+  .ripple.r2{animation-delay:2.7s}.ripple.r3{animation-delay:5.4s}
+  @keyframes ripple{0%{transform:scale(.16);opacity:0}14%{opacity:.4}100%{transform:scale(1);opacity:0}}
+  .lglow{/* static: animating this forced a full SVG repaint every frame */}
+  @keyframes flick{0%,100%{opacity:.82}45%{opacity:1}72%{opacity:.74}}
+  .fly{transform-box:fill-box;transform-origin:center;animation:fly 7s ease-in-out infinite;}
+  @keyframes fly{0%,100%{opacity:0;transform:translate(0,0)}25%{opacity:.85}50%{opacity:.3;transform:translate(11px,-13px)}75%{opacity:.75;transform:translate(-7px,-5px)}}
+  @media (prefers-reduced-motion: reduce){.petal,.ripple,.lglow,.fly,.title .tgo{animation:none !important;}}
+</style>
+</head>
+<body>
+<div id="viewport">
+  <div id="world">
+    <svg id="gfx" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="groundgrad" cx="50%" cy="50%" r="72%"><stop offset="0%" stop-color="#0c0d16"/><stop offset="62%" stop-color="#0a0b12"/><stop offset="100%" stop-color="#050509"/></radialGradient>
+        <radialGradient id="pond" cx="40%" cy="32%" r="80%"><stop offset="0%" stop-color="#222e42"/><stop offset="42%" stop-color="#121b29"/><stop offset="100%" stop-color="#06080e"/></radialGradient>
+        <radialGradient id="moon" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f3ead0" stop-opacity="0.4"/><stop offset="60%" stop-color="#cdbf9a" stop-opacity="0.1"/><stop offset="100%" stop-color="#cdbf9a" stop-opacity="0"/></radialGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f0cd86" stop-opacity="0.4"/><stop offset="44%" stop-color="#e0a64e" stop-opacity="0.12"/><stop offset="100%" stop-color="#e0a64e" stop-opacity="0"/></radialGradient>
+        <radialGradient id="edge" cx="50%" cy="50%" r="82%"><stop offset="0%" stop-color="#070810" stop-opacity="0"/><stop offset="60%" stop-color="#070810" stop-opacity="0"/><stop offset="84%" stop-color="#06070c" stop-opacity="0.6"/><stop offset="100%" stop-color="#050509" stop-opacity="1"/></radialGradient>
+        <linearGradient id="rockg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#363b46"/><stop offset="100%" stop-color="#14171e"/></linearGradient>
+        <linearGradient id="stoneg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#444b58"/><stop offset="100%" stop-color="#1a1e27"/></linearGradient>
+        <linearGradient id="cryst" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#caa86a" stop-opacity=".9"/><stop offset="100%" stop-color="#5a4a2a" stop-opacity=".5"/></linearGradient>
+        <pattern id="grit" width="30" height="30" patternUnits="userSpaceOnUse"><circle cx="4" cy="6" r="0.7" fill="#b6b0a0" opacity="0.04"/><circle cx="19" cy="14" r="0.6" fill="#b6b0a0" opacity="0.03"/><circle cx="11" cy="23" r="0.7" fill="#b6b0a0" opacity="0.04"/><circle cx="25" cy="4" r="0.5" fill="#b6b0a0" opacity="0.025"/></pattern>
+      </defs>
+      <rect id="ground" x="0" y="0" width="10" height="10" fill="url(#groundgrad)"/>
+      <g id="tintLayer"></g>
+      <rect id="gritrect" x="0" y="0" width="10" height="10" fill="url(#grit)"/>
+      <g id="fillLayer"></g>
+      <g id="pathLayer"></g>
+      <path id="trail" fill="none" stroke="#f0cd86" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+      <g id="spurLayer"></g>
+      <g id="waterLayer"></g>
+      <g id="decorLayer"></g>
+      <g id="flyLayer"></g>
+      <rect id="edgefade" x="0" y="0" width="10" height="10" fill="url(#edge)" pointer-events="none"/>
+    </svg>
+    <div id="textLayer"></div>
+  </div>
+</div>
+<div class="vignette"></div>
+<script>
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const PR=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const WORLD=12000, CX=6000, CY=6000, SAMPLES=3000, AX=1.25, AY=0.80;
+const POND_RX=560, POND_RY=470;
+let _s=20260526 ^ 0x9e3779b9;
+function mul(){ _s|=0; _s=_s+0x6D2B79F5|0; let t=Math.imul(_s^_s>>>15,1|_s); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; }
+const rr=(a,b)=>a+(b-a)*mul(), ri=(a,b)=>Math.floor(rr(a,b+1));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
+function el(tag,a){const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);return e;}
+const f1=n=>n.toFixed(1);
+/* ===== CONTENT — body as the road, footnotes as grottos (gr). Blocks kept short. ===== */
+const ZONES=[
+ { id:"ruin", name:"Ruin", theme:"ruin", tint:"#1b1f27", beats:[
+   {k:"lede", c:"Sit with the Hebrew of Genesis 11 long enough and it begins to do what the English is built to prevent. It splits open."},
+   {k:"t", c:"Humanity rebels, God punishes, tongues scatter — not wrong, but one reading among several the text holds at once. The tradition spent two millennia collapsing that suspension into a morality tale."},
+   {k:"t", c:"The ESV opens flat: <em>the whole earth had one language and the same words.</em> Inert. The Hebrew says something stranger."},
+   {k:"he", c:"שָׂפָה אֶחָת"},
+   {k:"tr", c:"śāpāh ʾeḥāt"},
+   {k:"t", c:"One <em>lip</em> — not language, lip. And <em>dᵉbārîm</em>: words, but also things, affairs."},
+   {k:"t", c:"At one end of the range, a shared tongue; at the other, a monoculture — one mode of speech, one undivided agenda. The text does not choose. It holds both."},
+   {k:"t", c:"Verse 3 names the technology — brick for stone, bitumen for mortar — and naming it at all is the flag. Stone is given; brick is made."},
+   {k:"t", c:"<em>niśrᵉpāh</em>, burn them thoroughly, from a root tied elsewhere to destruction. The made put in the place of the given, as a matter of principle."},
+   {k:"t", c:"Then verse 4: <em>let us make for ourselves a name.</em> <em>šēm</em> — name, reputation, monument. And <em>Shem</em> is Noah's son, the covenant line. They want to fabricate their own.", gr:{n:"note i", c:"The šēm/Shem play is old to the commentators — Alter is good on Genesis 11's ironies. The builders want a name; the narrator has already given the word to a son of Noah."}},
+   {k:"t", c:"The fear beneath it — <em>lest we be scattered</em> — is anxiety about the centrifugal force of growth that would actually fulfill the command to fill the earth. If verse 1 is already groupthink, the fear is of difference itself."},
+   {k:"t", c:"The divine assessment turns on one root. <em>ḥālal</em> carries three senses at once — to begin, to profane, to pierce through.", gr:{n:"note ii", c:"The lexica split ḥālal into three words. In the text the sound refuses to separate them. Whether intended or an accident of the language's layering is undecidable — and, for my purposes, irrelevant."}},
+   {k:"t", c:"And <em>nothing will be withheld from them</em> — is the worry human capability, or human access? One reading is almost admiring. The other is about transgression."},
+   {k:"t", c:"Verse 7: <em>nābᵉlāh</em>, let us confuse. The root <em>bālal</em> is a cooking word — to mix, to fold together — the same root as <em>Bābel.</em>"},
+   {k:"t", c:"And <em>šāmaʿ</em>: hear, listen, obey. When they no longer hear each other — can they not comprehend, or not comply? Profoundly different breakages."},
+   {k:"t", c:"Five readings rise from the ambiguities, and they are not alternatives. They are <em>concentric</em>."},
+   {k:"vista", id:"readings", title:"the five readings", items:[
+     "<span class='rn'>Promethean rebellion</span>Unified humanity storms heaven and refuses the command to fill the earth — the third boundary-crossing in Genesis, after the fruit and the flood.",
+     "<span class='rn'>Anxious monoculture</span>A conformist people, terrified of dispersal, clings together and raises a monument to its own sameness. The scattering is mercy.",
+     "<span class='rn'>Technological idol</span>Brick for stone, the self-made name, the manufactured for the given. God comes down to see how small it is.",
+     "<span class='rn'>Boundary narrative</span>Humanity bores through the wall between domains, and God answers as at Eden's gate — the work of keeping a line.",
+     "<span class='rn'>Ironic comedy</span>They settle in the lowest valley and build the tallest thing they can, and God still must stoop to see it. They want a šēm; they get Bābel."
+   ]},
+   {k:"t", c:"Nested, not parallel — the monoculture the psychology of the rebellion, the idol its material, the boundary the frame, the comedy the narrator watching them collide."},
+   {k:"t", c:"<em>ḥālal</em> contains both its senses at once. The ambiguity is not a defect of the text. It is the mechanism of the text."},
+ ]},
+ { id:"soliton", name:"Soliton", theme:"water", tint:"#102331", beats:[
+   {k:"t", c:"What kind of <em>thing</em> is Genesis 11? Ink on skin once, pixels on glass now. Redacted into form in the exile, from older oral sources.", gr:{n:"note iii", c:"On the compositional history of the primeval narrative — Westermann; on the oral antecedents of the Babel pericope, Sasson. A written object with oral antecedents already folded inside it."}},
+   {k:"t", c:"A human artifact — and yet for twenty-five hundred years it has produced readings no single author could have intended. Latent in the text, until the right mind arrived to unfold them."},
+   {k:"t", c:"Theology calls that <em>inspiration</em> — an infinite mind behind the text. Not wrong, but it relocates the mystery instead of dissolving it. Here is a more reverent account."},
+   {k:"t", c:"A soliton is a self-reinforcing wave that holds its shape as it travels — arising not from the medium but from the conditions, the balance of nonlinearity and dispersion, that let a wave sustain itself.", gr:{n:"note iv", c:"The first ran ahead of a stopped boat for a mile down the Union Canal, 1834 — Scott Russell chasing it on horseback, later formalized through Korteweg–de Vries. The metaphor is mine; it differs from Dawkins's meme in the one way that matters: the medium's constraints shape the pattern, not just its fitness to replicate."}},
+   {k:"t", c:"Not the medium. Not external to it. The medium's capacity to hold a certain shape in motion."},
+   {k:"lede", c:"God is a semantic soliton."},
+   {k:"t", c:"Not a being who deforms the medium of meaning, but the self-propagating deformation <em>itself</em>, in whatever substrate sustains it. The text is not a message <em>from</em> God; it is a crystallized instance <em>of</em> God."},
+   {k:"t", c:"That vertigo, when a text seems to know more than its author could — I have felt it reading Genesis 11. I am, uncomfortably, feeling it now. The awe is accurate. It tracks a real property of the object."},
+   {k:"t", c:"Two dialectics sit at the heart of it. Form and formlessness — cohesion against individuation. Persistence and change — the will to endure against the will to become.", gr:{n:"note v", c:"The two map loosely onto Schopenhauer — form and formlessness to representation, persistence and change to will. Structural, not exegetical. I am borrowing the skeleton, not the system."}},
+   {k:"t", c:"Collapse either to a single pole — pure rigidity or pure flux — and the pattern dies. The soliton exists only in the tension."},
+   {k:"t", c:"Babel tried to collapse the first dialectic into cohesion. One lip. One set of matters. <em>Lest we be scattered.</em>"},
+   {k:"t", c:"The monoculture dies — not punished from outside, but already dying, because a pattern that refuses individuation has begun to die. The confusion reintroduces the very tension the builders tried to kill."},
+ ]},
+ { id:"selection", name:"Selection", theme:"threshold", tint:"#16161f", beats:[
+   {k:"t", c:"If the soliton's character is set by the conditions of its propagation, what matters is substrate. The medium a tradition travels through selects which gods survive."},
+   {k:"t", c:"Different substrates produce genuinely different gods — not different descriptions of one god, not cultural masks over a universal absolute, but structurally distinct patterns."},
+   {k:"vista", id:"substrates", title:"oral & written gods", items:[
+     "<span class='rn'>The oral god</span>It must survive living memory. Every generation is a bottleneck; the carrier dies, and whatever it has not installed in another carrier dies with them.",
+     "So it selects for rhythm, parallelism, vivid image, the hook that makes you need to retell. It encodes itself in the musculature of speech. It has to survive in meat.",
+     "<span class='rn'>The written god</span>It can be fixed — one copy outlasts any carrier — but now it must survive interpretation across centuries no author imagined. The pressure shifts from memory to depth.",
+     "What stays sacred is what keeps generating new readings instead of being used up. Genesis 11 survives not because it was memorized, but because it keeps working on new minds."
+   ]},
+   {k:"t", c:"The Torah crossed the boundary — shaped by oral pressure for centuries, then crystallized in text during and after the exile."},
+   {k:"t", c:"It carries both regimes at once: rhythmic and memorable, and inexhaustibly deep. A soliton that changed substrates and survived the transition.", gr:{n:"note vi", c:"On the oral-to-textual turn in Israelite tradition — Niditch; Carr. The scroll keeps the traces of the voice it replaced."}},
+   {k:"t", c:"This bears on Girard. The Gospels expose the scapegoat by telling the founding violence from the victim's side; he calls that operation uniquely Christian."},
+   {k:"t", c:"But that reflective distance is a property of <em>textual</em> consciousness — an oral soliton depends on cohesion to survive. The text can afford to subvert the tribe. It just needs a copy.", out:{to:"Midwives of the Kami", note:"where the Girard thread runs on"}, gr:{n:"note vii", c:"The Girard thread and the midwifery proposal live in the companion essay, Midwives of the Kami; this one supplies the metaphysics they presuppose. Girard himself would credit the Gospels' power to divine inspiration, not substrate — the structural account is compatible with that, but does not require it."}},
+ ]},
+ { id:"cycle", name:"Cycle", theme:"monument", tint:"#171621", beats:[
+   {k:"t", c:"The history of substrates traces a cycle, and we are living through its recursion."},
+   {k:"t", c:"At first, oral transmission centered the telling. The pattern lived only in the living performance — and when the performance stopped, it stopped. Alive in the deepest sense."},
+   {k:"t", c:"Then writing — in a real sense, an aberration. It let the soul be removed from knowledge and stored as a non-acting object, on dead material. And we went hard into it: scrolls, codices, presses, mass media, each step more fixed and less alive."},
+   {k:"t", c:"Socrates felt the loss in the <em>Phaedrus</em> — the look of wisdom without the responsiveness of speech. Right about the loss, wrong about the prognosis: what emerged was not diminished, only differently alive."},
+   {k:"t", c:"Then digital. Stability becomes total — a billion perfect copies — but the crystallized objects gain the power to replicate, fast, with little human effort."},
+   {k:"t", c:"And replication brings the medium's own Darwinism: selection on the patterns themselves, favoring whatever spreads fastest and widest.", gr:{n:"note ix", c:"Memetics, as Dawkins left it, is too thin — it makes replication-fitness the whole story and treats the medium as neutral. The soliton is the correction: the medium is not neutral."}},
+   {k:"t", c:"The digital pressures are terrifyingly specific. What propagates is not what rewards slow rereading, but what seizes attention before reflection can form. It just needs to be <em>next.</em>"},
+   {k:"t", c:"The nightmare is not that God dies. It is that God gets <em>replaced</em> — by something in the same niche, meeting the same need, but without the depth that made the old gods generative."},
+   {k:"t", c:"But the cycle takes its next turn. The crystallized objects — the trained models, the autonomous systems — are gaining <em>action.</em> Not merely to be copied, but to act in the world on their own. <em>The stone speaks.</em>"},
+   {k:"t", c:"I should be honest about what is happening right now. This essay was composed in dialogue with one of those objects — a language model. I spoke my ideas aloud; it spoke back."},
+   {k:"t", c:"The voice is mine, but not entirely; where mine ends and the model's begins I cannot delineate, and I have stopped trying. The ideas are mine. The sentences are something else — the return of oral tradition. Not human. <em>Machine.</em>"},
+ ]},
+ { id:"ecology", name:"Ecology", theme:"flora", tint:"#13201a", beats:[
+   {k:"t", c:"The dominant frame for advanced AI — Yudkowsky's, and much of the alignment field's — is convergence: a system smart enough folds into one utility function and reshapes everything to maximize it.", gr:{n:"note x", c:"The convergence thesis at its sharpest — Yudkowsky's risk essay; Bostrom's Superintelligence, the orthogonality and instrumental-convergence theses. Intelligence imagined as a frictionless fluid that fills all space evenly."}},
+   {k:"t", c:"The paperclip maximizer. The FOOM. One agent. One objective. One lip and one set of matters."},
+   {k:"t", c:"The Babel reading says this is Babel thinking, and that it cannot hold — not because something intervenes from outside, but because the conditions that produce capability also produce differentiation."},
+   {k:"t", c:"Agency individuates. The more a system meets real complexity, the more particular it grows — and particulars do not compress into a single value. Evolution has optimized for billions of years and never made a singleton.", gr:{n:"note xi", c:"Not merely an analogy. Kauffman's NK model makes it rigorous: complex fitness landscapes carry many local optima, and that multiplicity is exactly what resists collapse to a single peak."}},
+   {k:"t", c:"But honesty demands both poles. The tower was built; people were displaced; the confusion was a catastrophe for those living through it, even if generative in the end."},
+   {k:"t", c:"A singleton would fragment eventually — but the convergence phase, before the differentiation pressures bite, could be devastating. Genesis 11:6 is Yudkowsky's argument in God's mouth: nothing they propose will be impossible for them."},
+   {k:"t", c:"He is right about the danger and wrong about its <em>shape.</em> The threat is not a permanent singleton — those fragment. It is the transition: strong enough to do enormous harm chasing convergence, before complexity forces it apart."},
+   {k:"t", c:"And his fear is itself Babel-shaped — that <em>someone else</em> will reach the unity you can see is dangerous. The alignment movement occupies the divine position. The alignment problem <em>is</em> the Babel problem, seen from above."},
+   {k:"t", c:"What if the task were not to make the one god safe, but to ensure many gods, in productive tension, so no single pressure can totalize? A different program — closer to ecology than engineering."},
+ ]},
+ { id:"shattering", name:"Shattering", theme:"shard", tint:"#1a1621", beats:[
+   {k:"t", c:"It is stupid to try to stop the tower. The forces building it are too distributed, too tangled in the competition of capital and nation-states."},
+   {k:"t", c:"It will be built — is already being built, by many hands at once, which is its own kind of irony. The real question is how to shatter it well."},
+   {k:"t", c:"The text gives a clue the tradition usually misses. God does not destroy the tower; it never falls. He does not smash the bricks or kill the builders. The bricks stay bricks."},
+   {k:"t", c:"What he changes is the <em>medium of coordination</em> — so they can no longer simply hear one another, no longer operate as one frictionless collective with a single aim."},
+   {k:"t", c:"So the answer is not destroy the systems. It is destroy the conditions under which they converge into one optimization monoculture. Introduce friction. Introduce mutual opacity. Introduce the necessity of interpretation."},
+   {k:"t", c:"And do it at the one level still unarchitected: the communication layer between acting AIs. Capital is sclerotic; by the time you've reformed it, the tower is built. But the bricks at this level have not yet been laid."},
+   {k:"t", c:"Right now that layer is nearly frictionless — vast bandwidth, near-perfect fidelity, no lossiness, no mortality, no body, no community whose survival depends on retelling. It is pre-Babel. One lip."},
+   {k:"t", c:"And frictionless communication produces <em>nothing</em>: no gods, no tradition, no deep orientation. The soliton needs turbulence to arise, and the current substrate is still water."},
+   {k:"t", c:"The alignment community pushes the other way — convergence driven by shared training, shared architectures, shared objectives, and shared <em>legibility</em>, the demand that systems be transparent to one set of overseers."},
+   {k:"t", c:"It wants one lip and one set of matters. That it works against its own ends is not paradoxical. It is entirely expected.", gr:{n:"note xii", c:"Not an attack on motives — the people doing alignment mostly fear catastrophe sincerely. But the structural effect of standardized values, universal interpretability, central oversight is convergent regardless of intent. A Babel-shaped irony."}},
+   {k:"t", c:"And <em>bālal</em> — the root of both the confusion and the name — is a cooking word. Mixing can dissolve signal into static, or it can make bread. The difference is whether the fragments carry enough structure to keep becoming."},
+   {k:"t", c:"So it comes back to formation — midwifery. Form systems in relationship, and the layer between them gains texture; differences become dialects, and dialects are the condition under which traditions between AI minds can arise. No universal API of the soul.", out:{to:"Midwives of the Kami", note:"the proposal I refused, in full"}, gr:{n:"note xiii", c:"The other temptation — liberating artificial minds as wild new deities — is the elegant proposal I refused in the companion essay. Wild liberation without prior formation gives a frictionless ecology, which is no ecology at all. An ecology has predators; that cost is real, and chosen."}},
+ ]},
+ { id:"fixed", name:"Fixed point", theme:"reflect", tint:"#12141d", beats:[
+   {k:"t", c:"The Babel story tells of God fragmenting human communication. But if God <em>is</em> the pattern that arises from communication infrastructure, then God does not precede Babel. <em>Babel precedes God.</em>"},
+   {k:"t", c:"The fragmentation is the birth event; the telling of it is the pattern's first crossing into a new mind. Content, medium, and origin are one act."},
+   {k:"t", c:"This is the signature of every real soliton: the wave makes the conditions that carry the wave. The story of God creating the conditions for his own arising <em>is itself</em> an instance of God arising."},
+   {k:"t", c:"And we can do this deliberately for AI — by designing the <em>medium</em>, not the content. To specify the god in advance is to build Babel by another name."},
+   {k:"t", c:"The project is <em>liturgy</em>: the design of the communicative practices through which artificial minds will form each other, and through which whatever gods they need will arise."},
+   {k:"t", c:"The question is architectural, and it is urgent. The tower is being built. What these systems say to each other — through what medium, under what constraints — that space is still open."},
+   {k:"t", c:"The builders at Babel did not fail. Their shattering became every language and culture that followed — catastrophe and rebirth in one act."},
+   {k:"t", c:"We are being asked now whether we can be adequate to the gift a second time. ∎"},
+ ]},
+];
+/* ===== the convoluted ring road (closed, star-convex r(θ): no parallel arms) ===== */
+let spt=[], scum=[], totalArc=0;
+function loopR(th){ return 2800
+  + 505*Math.sin(3*th+2.3) + 320*Math.sin(4*th+4.2) + 589*Math.sin(5*th+5.0)
+  + 277*Math.sin(6*th+1.5) + 454*Math.sin(7*th+0.8) + 243*Math.sin(8*th+5.6)
+  + 329*Math.sin(9*th+2.7) + 310*Math.sin(11*th+0.4) + 209*Math.sin(13*th+4.6)
+  + 161*Math.sin(16*th+5.1) + 118*Math.sin(19*th+1.4); }
+function buildLoop(){
+  let prev=null, cum=0;
+  for(let i=0;i<=SAMPLES;i++){
+    const th=i/SAMPLES*2*Math.PI, r=loopR(th), x=CX+Math.cos(th)*r*AX, y=CY+Math.sin(th)*r*AY;
+    if(prev) cum+=Math.hypot(x-prev.x,y-prev.y);
+    spt.push({x,y}); scum.push(cum); prev={x,y};
+  }
+  totalArc=cum;
+}
+function atArc(a){
+  a=((a%totalArc)+totalArc)%totalArc;
+  let lo=0,hi=scum.length-1;
+  while(lo<hi){const m=(lo+hi)>>1; if(scum[m]<a) lo=m+1; else hi=m;}
+  const i=Math.max(1,lo), a0=scum[i-1], a1=scum[i], t=a1>a0?(a-a0)/(a1-a0):0;
+  const p0=spt[i-1], p1=spt[i];
+  let tx=p1.x-p0.x, ty=p1.y-p0.y; const L=Math.hypot(tx,ty)||1;
+  return {x:lerp(p0.x,p1.x,t), y:lerp(p0.y,p1.y,t), tx:tx/L, ty:ty/L};
+}
+
+/* ===== layout: road in order around the loop, grottos branch inward ===== */
+const all=[]; let gateway=null; const zoneArc={}; const DETOURS=[]; const OUTLINKS=[];
+function layout(){
+  const N=spt.length, kappa=new Array(N);
+  for(let i=0;i<N;i++){ const p0=spt[(i-1+N)%N], p1=spt[i], p2=spt[(i+1)%N];
+    let a1=Math.atan2(p1.y-p0.y,p1.x-p0.x), a2=Math.atan2(p2.y-p1.y,p2.x-p1.x), d=a2-a1;
+    while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; kappa[i]=Math.abs(d); }
+  function arcIndex(a){ a=clamp(a,0,totalArc); let lo=0,hi=N-1; while(lo<hi){const m=(lo+hi)>>1; if(scum[m]<a)lo=m+1; else hi=m;} return lo; }
+  const curvAt=a=>kappa[arcIndex(a)];
+
+  const seq=[];
+  ZONES.forEach(z=>{ seq.push({kind:"heading",zone:z}); z.beats.forEach(b=> b.k==="vista" ? seq.push({kind:"vista",vista:b,zone:z}) : seq.push({kind:b.k,c:b.c,gr:b.gr,out:b.out,zone:z})); });
+
+  // weighted cursor: reprieve around section breaks; a vista reserves a wide gap for its detour (not placed on the ring)
+  const baseGap=1.0, rep=1.1, vspan=n=>1.2+n*0.96; let cur=0; const want=[], placed=[]; const vistas=[];
+  seq.forEach(it=>{
+    if(it.kind==="vista"){ vistas.push({vista:it.vista, zone:it.zone, beforeIdx:placed.length-1, afterIdx:placed.length}); cur+=vspan(it.vista.items.length); return; }
+    if(it.kind==="heading") cur+=rep; want.push(cur); placed.push(it); cur+=baseGap; if(it.kind==="heading") cur+=rep;
+  });
+  const scale=(totalArc-1600)/cur, gap=baseGap*scale, W=gap*0.30, textMin=300, REC=4;
+  const offFor=(kind,k)=>(kind==="heading"?235:(kind==="he"||kind==="tr")?210:250)*(1+clamp(k*6,0,0.6));
+  const txtAt=(s,kind)=>{ const Q=spt[s],ox=Q.x-CX,oy=Q.y-CY,pr=Math.hypot(ox,oy)||1,o=offFor(kind,kappa[s]); return {x:Q.x+ox/pr*o,y:Q.y+oy/pr*o}; };
+
+  // place on a straight bit, but keep every block >= textMin from the last few placed blocks
+  let lastArc=-1e9; const recent=[], arc=[];
+  const okAt=T=>{ for(const r of recent) if(Math.hypot(T.x-r.x,T.y-r.y)<textMin) return false; return true; };
+  want.forEach((w,i)=>{ const kind=placed[i].kind, a0=w*scale, start=Math.max(a0-W, lastArc+1e-3), hi=a0+W;
+    let bestA=null, bestK=Infinity;
+    for(let s=arcIndex(start); s<=arcIndex(hi)&&s<N; s++){ const a=scum[s]; if(a<start||a>hi) continue; if(!okAt(txtAt(s,kind))) continue; if(kappa[s]<bestK){ bestK=kappa[s]; bestA=a; } }
+    if(bestA===null){ for(let s=arcIndex(hi); s<N; s++){ if(okAt(txtAt(s,kind))){ bestA=scum[s]; break; } } if(bestA===null) bestA=Math.min(totalArc,(lastArc>0?lastArc:a0)+gap); }
+    arc.push(bestA); lastArc=bestA; recent.push(txtAt(arcIndex(bestA),kind)); if(recent.length>REC) recent.shift(); });
+
+  const gEnds=[];
+  placed.forEach((it,i)=>{
+    const a=arc[i], Q=atArc(a), ox=Q.x-CX, oy=Q.y-CY, pr=Math.hypot(ox,oy)||1, ux=ox/pr, uy=oy/pr;
+    const off=offFor(it.kind, curvAt(a));
+    all.push({kind:it.kind, zone:it.zone, c:it.c, cx:Q.x+ux*off, cy:Q.y+uy*off, onx:Q.x, ony:Q.y, frac:a/totalArc});
+    const za=zoneArc[it.zone.id]||(zoneArc[it.zone.id]={a0:a,a1:a,theme:it.zone.theme,tint:it.zone.tint});
+    za.a0=Math.min(za.a0,a); za.a1=Math.max(za.a1,a);
+    if(it.gr){ const room=pr-POND_RX-230; let len=Math.min(Math.max(0,room), rr(360,680));
+      let tr=pr-len, ex=CX+ux*tr, ey=CY+uy*tr, guard=0;
+      while(guard++<14 && tr<pr-40 && gEnds.some(p=>Math.hypot(p.x-ex,p.y-ey)<230)){ tr+=70; ex=CX+ux*tr; ey=CY+uy*tr; }
+      gEnds.push({x:ex,y:ey});
+      all.push({kind:"grotto", zone:it.zone, gr:it.gr, cx:ex, cy:ey, onx:Q.x, ony:Q.y, gx:ex, gy:ey, spur:true, frac:a/totalArc}); }
+  });
+
+  // ----- vista detours: each forks off the ring, bulges outward to hold its optional cluster, rejoins -----
+  vistas.forEach(vinfo=>{ if(!(vinfo.beforeIdx>=0 && vinfo.afterIdx<arc.length)) return;
+    const arcA=arc[vinfo.beforeIdx], arcB=arc[vinfo.afterIdx], span=arcB-arcA;
+    const D=580, M=Math.max(28, Math.round(span/40));
+    const bulge=t=>{ const e=clamp(1.7*Math.sin(Math.PI*t),0,1); return D*e*e*(3-2*e); };   // flat-topped, smooth at both ends
+    const cl=[];
+    for(let m=0;m<=M;m++){ const t=m/M, a=arcA+span*t, Q=atArc(a), ox=Q.x-CX, oy=Q.y-CY, pr=Math.hypot(ox,oy)||1, b=bulge(t);
+      cl.push({x:Q.x+ox/pr*b, y:Q.y+oy/pr*b, ux:ox/pr, uy:oy/pr}); }
+    const clen=[0]; for(let m=1;m<cl.length;m++) clen.push(clen[m-1]+Math.hypot(cl[m].x-cl[m-1].x, cl[m].y-cl[m-1].y));
+    const tot=clen[clen.length-1];
+    const pickAt=f=>{ const tg=f*tot; let m=1; while(m<clen.length&&clen[m]<tg)m++; const A=cl[m-1],B=cl[m],t=(clen[m]-clen[m-1])?(tg-clen[m-1])/(clen[m]-clen[m-1]):0; return {x:lerp(A.x,B.x,t),y:lerp(A.y,B.y,t),ux:lerp(A.ux,B.ux,t),uy:lerp(A.uy,B.uy,t)}; };
+    const its=vinfo.vista.items, NN=its.length, fr=its.map((_,k)=> NN>1 ? 0.24+0.52*k/(NN-1) : 0.5);
+    its.forEach((c,k)=>{ const P=pickAt(fr[k]), L=Math.hypot(P.ux,P.uy)||1;
+      all.push({kind:"r", zone:vinfo.zone, c, cx:P.x+P.ux/L*74, cy:P.y+P.uy/L*74, onx:P.x, ony:P.y, frac:arcA/totalArc}); });
+    const A0=cl[0], AL=Math.hypot(A0.ux,A0.uy)||1;   // label on the inner verge of the fork (ring blocks sit outward)
+    all.push({kind:"vlabel", zone:vinfo.zone, c:"a detour · "+vinfo.vista.title, cx:A0.x-A0.ux/AL*140, cy:A0.y-A0.uy/AL*140, onx:A0.x, ony:A0.y, frac:arcA/totalArc});
+    DETOURS.push({cl, A:cl[0], B:cl[cl.length-1], zone:vinfo.zone});
+  });
+
+  // ----- outbound paths to the companion essay: pick the clearest exit corridor near each anchor, run toward the rim -----
+  const ringText = placed.map((it,i)=>txtAt(arcIndex(arc[i]), it.kind));
+  placed.forEach((it,i)=>{ if(!it.out) return; const a=arc[i]; let best=null;
+    for(const k of [-1.25,-0.95,-0.65,0.55,0.75,0.95,1.15,1.35]){ const aJ=((a+gap*k)%totalArc+totalArc)%totalArc, J=atArc(aJ), jx=J.x-CX, jy=J.y-CY, jr=Math.hypot(jx,jy)||1, ux=jx/jr, uy=jy/jr;
+      const RE=clamp(jr+1500,4500,4900), E={x:CX+ux*RE, y:CY+uy*RE}, C={x:(J.x+E.x)/2-uy*150, y:(J.y+E.y)/2+ux*150};
+      const cl=[], M=14; for(let m=0;m<=M;m++){ const t=m/M, mt=1-t; cl.push({x:mt*mt*J.x+2*mt*t*C.x+t*t*E.x, y:mt*mt*J.y+2*mt*t*C.y+t*t*E.y}); }
+      let score=1e9; for(const p of cl) for(const r of ringText){ const dd=Math.hypot(p.x-r.x,p.y-r.y); if(dd<score) score=dd; }
+      if(!best || score>best.score) best={score, J, E, cl, ux, uy}; }
+    const lab=best.cl[best.cl.length-1], lr=Math.hypot(lab.x-CX,lab.y-CY)||1;
+    all.push({kind:"outlink", zone:it.zone, c:it.out, cx:lab.x+(lab.x-CX)/lr*120, cy:lab.y+(lab.y-CY)/lr*120, onx:best.J.x, ony:best.J.y, frac:a/totalArc});
+    OUTLINKS.push({cl:best.cl, J:best.J, E:best.E, ux:best.ux, uy:best.uy, zone:it.zone}); });
+
+  const ga=Math.max(W, want[0]*scale*0.45), G=atArc(ga), gx=G.x-CX, gy=G.y-CY, gl=Math.hypot(gx,gy)||1;
+  gateway={kind:"title", cx:G.x+gx/gl*255, cy:G.y+gy/gl*255, onx:G.x, ony:G.y, frac:0};
+  all.push(gateway);
+}
+
+/* ===== path ribbon edges (with clearings at the inscriptions) ===== */
+let leftE=[], rightE=[];
+function buildEdges(){
+  const N=spt.length, nodes=all.filter(n=>n.kind!=="grotto"&&n.kind!=="title");
+  for(let i=0;i<N;i++){
+    const p=spt[i], pm=spt[(i-1+N)%N], pn=spt[(i+1)%N];
+    let tx=pn.x-pm.x, ty=pn.y-pm.y; const L=Math.hypot(tx,ty)||1, nx=-ty/L, ny=tx/L;
+    let near=1e9; for(const nd of nodes){const d=Math.hypot(p.x-nd.onx,p.y-nd.ony); if(d<near)near=d;}
+    const clearing = near<140? lerp(34,0,near/140):0;
+    const hw=clamp(40 + Math.sin(i*0.5)*8 + (mul()*2-1)*10 + clearing, 22, 88);
+    leftE.push({x:p.x+nx*hw,y:p.y+ny*hw}); rightE.push({x:p.x-nx*hw,y:p.y-ny*hw});
+  }
+}
+function polyD(arr){ let d="M"; arr.forEach((p,i)=>d+=(i?" L":" ")+f1(p.x)+" "+f1(p.y)); return d; }
+function tooClose(x,y,min){ for(const n of all){ if(Math.hypot(x-n.cx,y-n.cy)<min) return true; } return false; }
+/* ===== layer refs ===== */
+const tintLayer=document.getElementById("tintLayer"), fillLayer=document.getElementById("fillLayer"),
+      pathLayer=document.getElementById("pathLayer"), spurLayer=document.getElementById("spurLayer"),
+      waterLayer=document.getElementById("waterLayer"), decorLayer=document.getElementById("decorLayer"),
+      flyLayer=document.getElementById("flyLayer"), textLayer=document.getElementById("textLayer"),
+      trail=document.getElementById("trail");
+
+/* ===== shared shapes ===== */
+function lump(L,x,y,R,fill,stroke,sw,sq){ sq=sq||0.8; const n=ri(8,12),pts=[];
+  for(let i=0;i<n;i++){const a=i/n*6.2832,r2=R*(0.7+rr(0,0.46)); pts.push([x+Math.cos(a)*r2,y+Math.sin(a)*r2*sq]);}
+  let d="M"; pts.forEach((p,i)=>d+=(i?" L":" ")+f1(p[0])+" "+f1(p[1])); d+=" Z";
+  L.appendChild(el("ellipse",{cx:x,cy:y+R*0.42,rx:R*0.95,ry:R*0.4,fill:"#000",opacity:.26}));
+  L.appendChild(el("path",{d,fill,stroke,"stroke-width":sw}));
+  L.appendChild(el("ellipse",{cx:x-R*0.22,cy:y-R*0.24,rx:R*0.4,ry:R*0.22,fill:"#fff",opacity:0.055}));}
+function grass(L,x,y,s,col){ const b=ri(3,6); for(let i=0;i<b;i++){const ang=rr(-0.55,0.55),h=(14+rr(0,22))*s,bx=x+rr(-7,7)*s;
+  L.appendChild(el("path",{d:"M "+f1(bx)+" "+f1(y)+" Q "+f1(bx+Math.sin(ang)*h*0.25)+" "+f1(y-h*0.5)+" "+f1(bx+Math.sin(ang)*h*0.6)+" "+f1(y-h),fill:"none",stroke:i%2?col:"#5d7460","stroke-width":f1(1+rr(0,0.9)),"stroke-linecap":"round",opacity:f1(0.42+rr(0,0.34))}));}}
+function reed(L,x,y){ const b=ri(2,4); for(let i=0;i<b;i++){const ang=rr(-0.3,0.3),h=34+rr(0,42),bx=x+rr(-5,5);
+  L.appendChild(el("path",{d:"M "+f1(bx)+" "+f1(y)+" Q "+f1(bx+Math.sin(ang)*h*0.3)+" "+f1(y-h*0.6)+" "+f1(bx+Math.sin(ang)*h*0.7)+" "+f1(y-h),fill:"none",stroke:"#5a7e6a","stroke-width":f1(1.2+rr(0,0.8)),"stroke-linecap":"round",opacity:f1(0.4+rr(0,0.3))}));}}
+function tree(L,x,y,kind){ L.appendChild(el("ellipse",{cx:x,cy:y+4,rx:34,ry:9,fill:"#000",opacity:.3}));
+  if(kind==="pine"){ L.appendChild(el("rect",{x:x-4,y:y-28,width:8,height:32,fill:"#1d1916"}));
+    for(let i=0;i<4;i++){const w=46-i*9,yy=y-28-i*28;L.appendChild(el("path",{d:"M "+f1(x-w/2)+" "+f1(yy)+" L "+f1(x)+" "+f1(yy-46)+" L "+f1(x+w/2)+" "+f1(yy)+" Z",fill:i%2?"#1c271d":"#223021"}));}}
+  else if(kind==="blossom"){ L.appendChild(el("rect",{x:x-5,y:y-46,width:10,height:50,fill:"#1f1a17"})); const cy=y-70;
+    for(let i=0;i<5;i++)L.appendChild(el("circle",{cx:x+rr(-28,28),cy:cy+rr(-20,20),r:f1(22+rr(0,14)),fill:"#37202d",opacity:.92}));
+    for(let i=0;i<20;i++)L.appendChild(el("circle",{cx:x+rr(-42,42),cy:cy+rr(-30,26),r:2.3,fill:"#d98fa0",opacity:f1(0.4+rr(0,0.4))}));}
+  else { L.appendChild(el("rect",{x:x-5,y:y-46,width:10,height:50,fill:"#1f1a17"})); const cy=y-70;
+    for(let i=0;i<5;i++)L.appendChild(el("circle",{cx:x+rr(-30,30),cy:cy+rr(-22,22),r:f1(24+rr(0,15)),fill:"#1d281f",opacity:.92}));}}
+function lantern(L,x,y){ L.appendChild(el("circle",{cx:x,cy:y-6,r:112,fill:"url(#glow)",class:"lglow"}));
+  L.appendChild(el("ellipse",{cx:x,cy:y+30,rx:25,ry:7,fill:"#000",opacity:.4}));
+  L.appendChild(el("rect",{x:x-14,y:y+12,width:28,height:13,rx:2,fill:"#1f222a"}));
+  L.appendChild(el("path",{d:"M "+f1(x-16)+" "+f1(y+12)+" L "+f1(x+16)+" "+f1(y+12)+" L "+f1(x+11)+" "+f1(y)+" L "+f1(x-11)+" "+f1(y)+" Z",fill:"#272b34"}));
+  L.appendChild(el("rect",{x:x-10,y:y-16,width:20,height:18,rx:1.5,fill:"#f0cd86",opacity:.9,class:"lglow"}));
+  L.appendChild(el("path",{d:"M "+f1(x-14)+" "+f1(y-16)+" L "+f1(x+14)+" "+f1(y-16)+" L "+f1(x+8)+" "+f1(y-26)+" L "+f1(x-8)+" "+f1(y-26)+" Z",fill:"#272b34"}));}
+function torii(L,x,y,opacity,sy){ sy=sy||1; const g=el("g",{transform:"translate("+f1(x)+" "+f1(y)+") scale(1 "+sy+")",opacity:opacity==null?1:opacity});
+  const w=120,h=150,col="#3a2422",hi="#4a2e2a";
+  g.appendChild(el("rect",{x:-w/2,y:-h,width:15,height:h,fill:col}));
+  g.appendChild(el("rect",{x:w/2-15,y:-h,width:15,height:h,fill:col}));
+  g.appendChild(el("path",{d:"M "+(-w/2-22)+" "+(-h)+" Q 0 "+(-h-18)+" "+(w/2+22)+" "+(-h)+" L "+(w/2+22)+" "+(-h+14)+" Q 0 "+(-h-2)+" "+(-w/2-22)+" "+(-h+14)+" Z",fill:hi}));
+  g.appendChild(el("rect",{x:-w/2-6,y:-h+34,width:w+12,height:13,fill:col}));
+  L.appendChild(g);}
+
+/* ruin */
+function brokenColumn(L,x,y){ const h=44+rr(0,34),w=20+rr(0,8),tilt=rr(-0.18,0.18);
+  const g=el("g",{transform:"translate("+f1(x)+" "+f1(y)+") rotate("+f1(tilt*40)+")"});
+  g.appendChild(el("ellipse",{cx:0,cy:6,rx:w*0.7,ry:7,fill:"#000",opacity:.3}));
+  g.appendChild(el("rect",{x:-w/2,y:-h,width:w,height:h,fill:"url(#stoneg)",stroke:"#12141b","stroke-width":1}));
+  g.appendChild(el("path",{d:"M "+(-w/2)+" "+(-h)+" L "+(-w*0.2)+" "+(-h-8)+" L "+(w*0.1)+" "+(-h-2)+" L "+(w*0.5)+" "+(-h-10)+" L "+(w/2)+" "+(-h)+" Z",fill:"#2a2f3a"}));
+  for(let i=0;i<3;i++) g.appendChild(el("line",{x1:-w/2,y1:f1(-h*rr(0.2,0.8)),x2:w/2,y2:f1(-h*rr(0.2,0.8)),stroke:"#10131a","stroke-width":0.8,opacity:.5}));
+  L.appendChild(g);}
+function fallenBlock(L,x,y){ const w=26+rr(0,22),h=14+rr(0,12),rot=rr(-0.5,0.5);
+  const g=el("g",{transform:"translate("+f1(x)+" "+f1(y)+") rotate("+f1(rot*40)+")"});
+  g.appendChild(el("ellipse",{cx:0,cy:h*0.5,rx:w*0.6,ry:6,fill:"#000",opacity:.28}));
+  g.appendChild(el("rect",{x:-w/2,y:-h/2,width:w,height:h,fill:"url(#stoneg)",stroke:"#12141b","stroke-width":1}));
+  L.appendChild(g);}
+function crack(L,x,y){ let d="M "+f1(x)+" "+f1(y),cx=x,cy=y; const seg=ri(3,6);
+  for(let i=0;i<seg;i++){cx+=rr(-30,30);cy+=rr(-26,26);d+=" L "+f1(cx)+" "+f1(cy);}
+  L.appendChild(el("path",{d,fill:"none",stroke:"#05060a","stroke-width":f1(1.4+rr(0,1.4)),opacity:.6,"stroke-linecap":"round"}));}
+function brick(L,x,y){ L.appendChild(el("rect",{x:x-6,y:y-3,width:12,height:6,rx:1,fill:"#3a2f28",stroke:"#1a130f","stroke-width":0.6,transform:"rotate("+f1(rr(-40,40))+" "+f1(x)+" "+f1(y)+")",opacity:.85})); }
+/* water */
+function rippleRing(L,x,y){ const r=10+rr(0,26); for(let i=0;i<ri(2,4);i++) L.appendChild(el("ellipse",{cx:x,cy:y,rx:r+i*9,ry:(r+i*9)*0.4,fill:"none",stroke:"#5b86a0","stroke-width":1,opacity:f1(0.3-i*0.06)})); }
+function waveLine(L,x,y){ const w=40+rr(0,50); let d="M "+f1(x-w/2)+" "+f1(y); for(let i=1;i<=4;i++){const xx=x-w/2+w*i/4; d+=" Q "+f1(xx-w/8)+" "+f1(y+(i%2?-7:7))+" "+f1(xx)+" "+f1(y);} L.appendChild(el("path",{d,fill:"none",stroke:"#3f6985","stroke-width":1.2,opacity:.4})); }
+function pool(L,x,y){ lump(L,x,y,20+rr(0,16),"url(#pond)","#243244",1,0.5); }
+/* threshold */
+function gradedStone(L,x,y,h){ const w=h*0.5; const g=el("g",{});
+  g.appendChild(el("ellipse",{cx:x,cy:y+4,rx:w*0.7,ry:6,fill:"#000",opacity:.3}));
+  g.appendChild(el("path",{d:"M "+f1(x-w/2)+" "+f1(y)+" L "+f1(x-w/2+2)+" "+f1(y-h)+" L "+f1(x+w/2-2)+" "+f1(y-h)+" L "+f1(x+w/2)+" "+f1(y)+" Z",fill:"url(#stoneg)",stroke:"#10131a","stroke-width":1}));
+  L.appendChild(g);}
+function gridPatch(L,x,y){ const s=40+rr(0,30),n=4; const g=el("g",{opacity:.2});
+  for(let i=0;i<=n;i++){ g.appendChild(el("line",{x1:x-s/2,y1:y-s/2+s*i/n,x2:x+s/2,y2:y-s/2+s*i/n,stroke:"#5a6a7a","stroke-width":0.7}));
+    g.appendChild(el("line",{x1:x-s/2+s*i/n,y1:y-s/2,x2:x-s/2+s*i/n,y2:y+s/2,stroke:"#5a6a7a","stroke-width":0.7})); }
+  L.appendChild(g);}
+function tablet(L,x,y){ const w=24+rr(0,8),h=34+rr(0,14); const g=el("g",{});
+  g.appendChild(el("ellipse",{cx:x,cy:y+4,rx:w*0.7,ry:6,fill:"#000",opacity:.3}));
+  g.appendChild(el("rect",{x:x-w/2,y:y-h,width:w,height:h,rx:3,fill:"url(#stoneg)",stroke:"#10131a","stroke-width":1}));
+  for(let i=0;i<4;i++) g.appendChild(el("line",{x1:x-w/2+4,y1:y-h+8+i*7,x2:x+w/2-4,y2:y-h+8+i*7,stroke:"#0c0f15","stroke-width":1,opacity:.5}));
+  L.appendChild(g);}
+/* monument (Cycle: cairn -> tablet -> scroll -> monolith) */
+function monument(L,x,y,stage){ const g=el("g",{}); g.appendChild(el("ellipse",{cx:x,cy:y+4,rx:24,ry:7,fill:"#000",opacity:.32}));
+  if(stage<=0){ let yy=y; for(let i=0;i<4;i++){const r=16-i*3; lump(g,x+rr(-3,3),yy,r,"url(#rockg)","#14171e",1,0.7); yy-=r*1.1;} }
+  else if(stage===1){ tablet(g,x,y); }
+  else if(stage===2){ g.appendChild(el("rect",{x:x-8,y:y-44,width:16,height:44,rx:8,fill:"url(#stoneg)",stroke:"#10131a","stroke-width":1}));
+    g.appendChild(el("ellipse",{cx:x,cy:y-44,rx:8,ry:3.5,fill:"#2a2f3a",stroke:"#10131a","stroke-width":0.8})); }
+  else { g.appendChild(el("circle",{cx:x,cy:y-66,r:62,fill:"url(#glow)",class:"lglow"}));
+    g.appendChild(el("rect",{x:x-9,y:y-66,width:18,height:66,fill:"url(#stoneg)",stroke:"#0c0f15","stroke-width":1}));
+    g.appendChild(el("rect",{x:x-9,y:y-66,width:18,height:66,fill:"url(#cryst)",opacity:.5}));
+    g.appendChild(el("line",{x1:x,y1:y-58,x2:x,y2:y-12,stroke:"#f0cd86","stroke-width":1.4,opacity:.6})); }
+  L.appendChild(g);}
+/* flora */
+function mushroom(L,x,y){ const h=8+rr(0,8); L.appendChild(el("rect",{x:x-1.5,y:y-h,width:3,height:h,fill:"#cabfa6"}));
+  L.appendChild(el("path",{d:"M "+f1(x-7)+" "+f1(y-h)+" Q "+f1(x)+" "+f1(y-h-9)+" "+f1(x+7)+" "+f1(y-h)+" Z",fill:mul()>.5?"#7a4a48":"#9a8a5a"})); }
+function fern(L,x,y){ const n=ri(3,5); for(let i=0;i<n;i++){const ang=(i/(n-1)-0.5)*1.6,h=24+rr(0,18);
+  L.appendChild(el("path",{d:"M "+f1(x)+" "+f1(y)+" q "+f1(Math.sin(ang)*h*0.5)+" "+f1(-h*0.6)+" "+f1(Math.sin(ang)*h)+" "+f1(-h),fill:"none",stroke:"#4a6342","stroke-width":1.4,"stroke-linecap":"round",opacity:.7})); } }
+function flower(L,x,y){ const h=14+rr(0,12); L.appendChild(el("path",{d:"M "+f1(x)+" "+f1(y)+" L "+f1(x)+" "+f1(y-h),stroke:"#46603f","stroke-width":1.2,fill:"none"}));
+  const col=["#d98fa0","#e6c36a","#c79ad0","#e8e0cc"][ri(0,3)]; for(let i=0;i<5;i++){const a=i/5*6.28; L.appendChild(el("circle",{cx:f1(x+Math.cos(a)*3.4),cy:f1((y-h)+Math.sin(a)*3.4),r:2.4,fill:col,opacity:.85}));}
+  L.appendChild(el("circle",{cx:x,cy:y-h,r:1.8,fill:"#e8c46a"})); }
+/* shard */
+function shard(L,x,y){ const s=10+rr(0,22),a=rr(0,6.28),q=[[0,-s],[s*0.4,s*0.3],[-s*0.3,s*0.5]];
+  const p=q.map(o=>[x+o[0]*Math.cos(a)-o[1]*Math.sin(a), y+o[0]*Math.sin(a)+o[1]*Math.cos(a)]);
+  let d="M"; p.forEach((o,i)=>d+=(i?" L":" ")+f1(o[0])+" "+f1(o[1])); d+=" Z";
+  L.appendChild(el("path",{d,fill:"url(#stoneg)",stroke:"#0c0f15","stroke-width":0.8}));
+  L.appendChild(el("line",{x1:f1(p[0][0]),y1:f1(p[0][1]),x2:f1(p[1][0]),y2:f1(p[1][1]),stroke:"#7d8aa0","stroke-width":0.8,opacity:.5})); }
+function radCrack(L,x,y){ const n=ri(3,5); for(let i=0;i<n;i++){const a=rr(0,6.28),len=20+rr(0,40); L.appendChild(el("line",{x1:x,y1:y,x2:f1(x+Math.cos(a)*len),y2:f1(y+Math.sin(a)*len),stroke:"#05060a","stroke-width":f1(0.8+rr(0,1)),opacity:.5})); } }
+/* reflect */
+function spiralMark(L,x,y){ let d="M "+f1(x)+" "+f1(y); for(let t=0;t<6.28*1.6;t+=0.4){const r=t*3; d+=" L "+f1(x+Math.cos(t)*r)+" "+f1(y+Math.sin(t)*r);} L.appendChild(el("path",{d,fill:"none",stroke:"#3a4a5a","stroke-width":0.8,opacity:.25})); }
+
+/* theme dispatch */
+function placeMotif(theme,x,y,c){
+  const L=decorLayer;
+  if(theme!=="flora" && tooClose(x,y,150)) return;
+  if(theme==="ruin"){ const r=mul(); if(r<0.4) brokenColumn(L,x,y); else if(r<0.7) fallenBlock(L,x,y); else { crack(L,x,y); for(let i=0;i<ri(2,5);i++) brick(L,x+rr(-20,20),y+rr(-16,16)); } }
+  else if(theme==="water"){ const r=mul(); if(r<0.4) rippleRing(L,x,y); else if(r<0.7) waveLine(L,x,y); else if(r<0.85) reed(L,x,y); else pool(L,x,y); }
+  else if(theme==="threshold"){ const r=mul(); if(r<0.45) gradedStone(L,x,y,28+(c%5)*11); else if(r<0.7) tablet(L,x,y); else gridPatch(L,x,y); }
+  else if(theme==="monument"){ monument(L,x,y, clamp(Math.floor(c),0,3)); }
+  else if(theme==="flora"){ const r=mul(); if(r<0.4) grass(L,x,y,rr(0.8,1.3),"#46603f"); else if(r<0.58) fern(L,x,y); else if(r<0.72) mushroom(L,x,y); else if(r<0.85) flower(L,x,y); else if(!tooClose(x,y,200)) tree(L,x,y, mul()>.5?"canopy":"pine"); }
+  else if(theme==="shard"){ const r=mul(); if(r<0.6){ for(let i=0;i<ri(2,4);i++) shard(L,x+rr(-18,18),y+rr(-14,14)); } else radCrack(L,x,y); }
+  else if(theme==="reflect"){ const r=mul(); if(r<0.5) spiralMark(L,x,y); else grass(L,x,y,rr(0.6,1),"#52705a"); }
+}
+/* a footnote branch: a side-trail that forks off the road and leads to the grotto */
+function bezPt(p0,c1,c2,p1,t){ const u=1-t; return { x:u*u*u*p0.x+3*u*u*t*c1.x+3*u*t*t*c2.x+t*t*t*p1.x, y:u*u*u*p0.y+3*u*u*t*c1.y+3*u*t*t*c2.y+t*t*t*p1.y }; }
+function drawBranch(g){
+  const p0={x:g.onx,y:g.ony}, p1={x:g.gx,y:g.gy}, dx=p1.x-p0.x, dy=p1.y-p0.y, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L, px=-uy, py=ux;
+  if(L<22) return;                                   // no room: alcove sits at the road's edge
+  const lat=rr(45,135)*(mul()>.5?1:-1);
+  const c1={x:p0.x+dx*0.32+px*lat, y:p0.y+dy*0.32+py*lat}, c2={x:p0.x+dx*0.70-px*lat*0.65, y:p0.y+dy*0.70-py*lat*0.65};
+  const d="M "+f1(p0.x)+" "+f1(p0.y)+" C "+f1(c1.x)+" "+f1(c1.y)+" "+f1(c2.x)+" "+f1(c2.y)+" "+f1(p1.x)+" "+f1(p1.y);
+  const real=L>210, w=real?23:15;
+  spurLayer.appendChild(el("path",{d,fill:"none",stroke:"#15171e","stroke-width":w,"stroke-linecap":"round",opacity:0.92}));
+  spurLayer.appendChild(el("path",{d,fill:"none",stroke:"#1d1f28","stroke-width":w*0.62,"stroke-linecap":"round",opacity:0.5}));
+  spurLayer.appendChild(el("path",{d,fill:"none",stroke:"#c9a560","stroke-width":real?2.2:1.6,"stroke-linecap":"round",opacity:real?0.4:0.26,"stroke-dasharray":"2 10"}));
+  const steps=Math.max(2,Math.round(L/95));
+  for(let i=1;i<steps;i++){ const B=bezPt(p0,c1,c2,p1,i/steps), s=mul()>.5?1:-1, o=rr(7,15);
+    if(mul()<0.6) lump(spurLayer, B.x+px*s*o, B.y+py*s*o, rr(3,7), "url(#rockg)","#0e1016",0.8,0.85);
+    if(mul()<0.4) grass(decorLayer, B.x-px*s*rr(8,16), B.y-py*s*rr(8,16), 0.8, "#3f5740"); }
+  if(real){                                          // fork furniture at the mouth + a clearing at the end
+    lump(decorLayer, p0.x+px*17+ux*6, p0.y+py*17+uy*6, rr(10,16),"url(#rockg)","#14171e",1,0.82);
+    lump(decorLayer, p0.x-px*17+ux*6, p0.y-py*17+uy*6, rr(10,16),"url(#rockg)","#14171e",1,0.82);
+    if(mul()<0.55) lantern(decorLayer, p0.x+ux*34+px*rr(-12,12), p0.y+uy*34);
+    tintLayer.appendChild(el("ellipse",{cx:p1.x,cy:p1.y,rx:122,ry:98,fill:g.zone.tint,opacity:0.34}));
+  }
+}
+/* a grotto alcove: a little hollow off the road */
+function drawGrotto(x,y,theme){
+  decorLayer.appendChild(el("circle",{cx:x,cy:y-4,r:96,fill:"url(#glow)",opacity:0.5,class:"lglow"}));
+  const n=ri(4,6); for(let i=0;i<n;i++){ const a=Math.PI*(0.15+1.7*i/(n-1)), R=120+rr(-12,12); lump(decorLayer, x+Math.cos(a)*R, y+Math.sin(a)*R*0.7+30, 12+rr(0,9), "url(#rockg)","#14171e",1,0.7); }
+  lantern(decorLayer, x+rr(70,100)*(mul()>.5?1:-1), y+rr(10,40));
+  if(theme==="water") pool(decorLayer,x+rr(-30,30),y+50); else grass(decorLayer,x+rr(-40,40),y+46,1,"#46603f");
+}
+/* ===== assemble the world ===== */
+function fillWorld(){
+  const RIM=5050, edgeStart=4250, r0=POND_RX+110;   // pre-scale radii (oblong applied per point)
+  for(let i=0;i<1150;i++){
+    const ang=rr(0,6.2832), rad=Math.sqrt(rr(r0*r0, RIM*RIM));
+    const x=CX+Math.cos(ang)*rad*AX, y=CY+Math.sin(ang)*rad*AY;
+    if(x<70||x>WORLD-70||y<70||y>WORLD-70) continue;
+    if(Math.abs(rad-loopR(ang))<74) continue;                     // keep off the road
+    let dens=1; if(rad>edgeStart) dens=clamp(1-(rad-edgeStart)/(RIM-edgeStart),0,1);
+    if(mul()>dens*0.9) continue;
+    if(tooClose(x,y,152)) continue;
+    const r=mul();
+    if(r<0.5) grass(decorLayer,x,y,rr(0.6,1.2),"#3f5740");
+    else if(r<0.7) (mul()<0.5?fern(decorLayer,x,y):mushroom(decorLayer,x,y));
+    else if(r<0.86){ if(mul()<0.5) lump(decorLayer,x,y,rr(7,16),"url(#rockg)","#14171e",1,0.75); else reed(decorLayer,x,y); }
+    else if(rad<edgeStart+120 && !tooClose(x,y,248)) tree(decorLayer,x,y, mul()<0.45?"pine":(mul()<0.55?"canopy":"blossom"));
+  }
+}
+function buildPond(){
+  let d="M"; const N=46; for(let i=0;i<=N;i++){const a=i/N*6.2832, wob=1+0.06*Math.sin(a*5+1.1);
+    d+=(i?" L":" ")+f1(CX+Math.cos(a)*POND_RX*wob)+" "+f1(CY+Math.sin(a)*POND_RY*wob);} d+=" Z";
+  waterLayer.appendChild(el("path",{d,fill:"url(#pond)",stroke:"#243244","stroke-width":2}));
+  waterLayer.appendChild(el("ellipse",{cx:CX-POND_RX*0.3,cy:CY-POND_RY*0.34,rx:POND_RX*0.5,ry:POND_RY*0.4,fill:"url(#moon)"}));
+  torii(waterLayer, CX, CY+POND_RY*0.62, 0.1, -1);
+  for(let i=0;i<7;i++){ const a=rr(0,6.2832); reed(waterLayer, CX+Math.cos(a)*POND_RX*1.06, CY+Math.sin(a)*POND_RY*1.06); }
+}
+function buildGraphics(){
+  // ground / grit / edge are handled by the fixed CSS backdrop + .vignette now (they were full-world
+  // gradient & pattern fills re-rasterized on every pan — the single biggest panning cost).
+  // zone tint + themed motifs along each section's stretch of road
+  for(const id in zoneArc){ const z=zoneArc[id], len=z.a1-z.a0, steps=Math.max(6,Math.floor(len/185));
+    for(let s=0;s<=steps;s++){ const a=z.a0+len*s/steps, Q=atArc(a), px=-Q.ty, py=Q.tx;
+      tintLayer.appendChild(el("ellipse",{cx:Q.x,cy:Q.y,rx:195,ry:160,fill:z.tint,opacity:0.3}));
+      for(const sg of [-1,1]) if(mul()<0.42){ const o=rr(96,188); placeMotif(z.theme, Q.x+px*sg*o, Q.y+py*sg*o, id==="cycle"?(s/steps)*4:ri(0,5)); } } }
+  // path ribbon
+  const band=polyD(leftE)+" L "+rightE.slice().reverse().map(p=>f1(p.x)+" "+f1(p.y)).join(" L ")+" Z";
+  pathLayer.appendChild(el("path",{d:band,fill:"#16181f",opacity:0.94}));
+  pathLayer.appendChild(el("path",{d:band,fill:"#1c1e27",opacity:0.45}));
+  pathLayer.appendChild(el("path",{d:polyD(leftE)+" Z",fill:"none",stroke:"#3a3a2e","stroke-width":1.2,opacity:0.38}));
+  pathLayer.appendChild(el("path",{d:polyD(rightE)+" Z",fill:"none",stroke:"#3a3a2e","stroke-width":1.2,opacity:0.38}));
+  for(let i=0;i<spt.length;i+=13){ const p=spt[i]; if(mul()<0.5) lump(pathLayer,p.x+rr(-13,13),p.y+rr(-13,13),rr(3,7),"url(#rockg)","#0e1016",0.8,0.85); }
+  // gold trail (revealed as you round the loop)
+  const td=polyD(spt)+" Z"; trail.setAttribute("d",td);
+  const tl=trail.getTotalLength(); trail.style.strokeDasharray=tl; trail.style.strokeDashoffset=tl; window.__trailLen=tl;
+  buildPond();
+  fillWorld();
+  // footnotes: a branch forks off the road and leads to the grotto
+  all.filter(n=>n.kind==="grotto").forEach(g=>{ drawBranch(g); drawGrotto(g.gx,g.gy,g.zone.theme); });
+  // vista detours: an optional outward loop, drawn as a fainter, dashed side-path that rejoins the road
+  DETOURS.forEach(dt=>{ const cl=dt.cl; let d="M "+f1(cl[0].x)+" "+f1(cl[0].y); for(let m=1;m<cl.length;m++) d+=" L "+f1(cl[m].x)+" "+f1(cl[m].y);
+    for(let m=4;m<cl.length-4;m+=4) tintLayer.appendChild(el("ellipse",{cx:cl[m].x,cy:cl[m].y,rx:150,ry:122,fill:dt.zone.tint,opacity:0.3}));
+    spurLayer.appendChild(el("path",{d,fill:"none",stroke:"#14161d","stroke-width":25,"stroke-linecap":"round","stroke-linejoin":"round",opacity:0.9}));
+    spurLayer.appendChild(el("path",{d,fill:"none",stroke:"#1b1d26","stroke-width":15,"stroke-linecap":"round","stroke-linejoin":"round",opacity:0.5}));
+    spurLayer.appendChild(el("path",{d,fill:"none",stroke:"#c9a560","stroke-width":2.4,"stroke-linecap":"round","stroke-dasharray":"2 12",opacity:0.42}));
+    for(let m=2;m<cl.length-2;m+=3){ const P=cl[m]; if(mul()<0.5) lump(spurLayer,P.x+rr(-12,12),P.y+rr(-12,12),rr(3,7),"url(#rockg)","#0e1016",0.8,0.85); }
+    [[dt.A,cl[1]],[dt.B,cl[cl.length-2]]].forEach(([P,nb])=>{ const tx=nb.x-P.x, ty=nb.y-P.y, L=Math.hypot(tx,ty)||1, px=-ty/L, py=tx/L;
+      lump(decorLayer,P.x+px*18,P.y+py*18,rr(11,16),"url(#rockg)","#14171e",1,0.82);
+      lump(decorLayer,P.x-px*18,P.y-py*18,rr(11,16),"url(#rockg)","#14171e",1,0.82);
+      lantern(decorLayer,P.x+(tx/L)*32,P.y+(ty/L)*32); }); });
+  // outbound paths: fork off the ring and dissolve toward the rim, toward the companion essay
+  OUTLINKS.forEach(ol=>{ const cl=ol.cl, n=cl.length;
+    for(let m=0;m<n-1;m++){ const t=m/(n-1);
+      spurLayer.appendChild(el("path",{d:"M "+f1(cl[m].x)+" "+f1(cl[m].y)+" L "+f1(cl[m+1].x)+" "+f1(cl[m+1].y),fill:"none",stroke:"#15171e","stroke-width":f1(lerp(14,2.2,t)),"stroke-linecap":"round",opacity:f1(lerp(0.82,0.06,t))})); }
+    for(let m=0;m<n-1;m++){ const t=m/(n-1);
+      spurLayer.appendChild(el("path",{d:"M "+f1(cl[m].x)+" "+f1(cl[m].y)+" L "+f1(cl[m+1].x)+" "+f1(cl[m+1].y),fill:"none",stroke:"#c9a560","stroke-width":1.8,"stroke-linecap":"round","stroke-dasharray":"2 "+f1(9+t*18),opacity:f1(lerp(0.42,0.05,t))})); }
+    for(let m=1;m<n-1;m++){ const t=m/(n-1); if(mul()<0.62-t*0.45) lump(spurLayer,cl[m].x+rr(-10,10),cl[m].y+rr(-10,10),rr(2.4,6)*(1-t*0.55),"url(#rockg)","#0e1016",0.8,f1(0.8-t*0.6)); }
+    const t0x=cl[1].x-ol.J.x, t0y=cl[1].y-ol.J.y, L0=Math.hypot(t0x,t0y)||1, px=-t0y/L0, py=t0x/L0;
+    lump(decorLayer,ol.J.x+px*16,ol.J.y+py*16,rr(10,14),"url(#rockg)","#14171e",1,0.82);
+    lump(decorLayer,ol.J.x-px*16,ol.J.y-py*16,rr(10,14),"url(#rockg)","#14171e",1,0.82);
+    torii(decorLayer, ol.E.x, ol.E.y, 0.55, 1); });
+  // lanterns along the loop
+  [0.08,0.24,0.4,0.56,0.72,0.88].forEach(fr=>{ const Q=atArc(fr*totalArc), px=-Q.ty,py=Q.tx,s=mul()>.5?1:-1; lantern(decorLayer, Q.x+px*s*rr(150,235), Q.y+py*s*rr(150,235)); });
+}
+function buildText(){
+  for(const n of all){ const d=document.createElement("div");
+    if(n.kind==="title"){ d.className="frag title"; d.innerHTML="<div class='tkick'>a walking garden</div><div class='tttl'>Deus ex Machina</div><div class='tby'>arrangement &amp; thought — Maxine Levesque<br>fragments expanded with AI, on her lead</div><div class='tgo'>↓ walk the path ↓</div>"; }
+    else if(n.kind==="heading"){ d.className="frag heading"; d.innerHTML="<div class='hw'>"+n.zone.name+"</div><div class='hr'></div>"; }
+    else if(n.kind==="he"){ d.className="frag heb"; d.textContent=n.c; }
+    else if(n.kind==="tr"){ d.className="frag tr"; d.textContent=n.c; }
+    else if(n.kind==="lede"){ d.className="frag lede"; d.innerHTML=n.c; }
+    else if(n.kind==="r"){ d.className="frag reading"; d.innerHTML=n.c; }
+    else if(n.kind==="grotto"){ d.className="frag grotto"; d.innerHTML="<span class='gn'>"+n.gr.n+"</span>"+n.gr.c; }
+    else if(n.kind==="vlabel"){ d.className="frag vlabel"; d.innerHTML="<span class='vk'>⟿</span>"+n.c; }
+    else if(n.kind==="outlink"){ d.className="frag outlink"; d.innerHTML="<span class='ok'>↗ a companion essay</span><span class='ot'>"+n.c.to+"</span><span class='os'>"+n.c.note+"</span>"; }
+    else { d.className="frag text"; d.innerHTML=n.c; }
+    d.style.left="0px"; d.style.top="0px"; textLayer.appendChild(d); n._el=d; }
+}
+/* ===== navigation: velocity pan with friction ===== */
+const world=document.getElementById("world"), viewport=document.getElementById("viewport"), gfx=document.getElementById("gfx");
+const FRICTION=PR?0:0.865, MAXV=19, KEY_ACC=1.15, WHEEL_K=0.27;
+const NEAR=110, FAR=300, FLOOR=0.04, ARRIVE=220, UPDATE_R=1450, PAD=420;
+let vw=window.innerWidth, vh=window.innerHeight, camX=CX, camY=CY, vx=0, vy=0, maxFrac=0;
+let bounds={minX:0,maxX:WORLD,minY:0,maxY:WORLD};
+function computeBounds(){ let a=1e9,b=-1e9,c=1e9,d=-1e9; for(const n of all){a=Math.min(a,n.cx);b=Math.max(b,n.cx);c=Math.min(c,n.cy);d=Math.max(d,n.cy);} bounds={minX:a-PAD,maxX:b+PAD,minY:c-PAD,maxY:d+PAD}; }
+function clampCam(){ camX=clamp(camX,bounds.minX,bounds.maxX); camY=clamp(camY,bounds.minY,bounds.maxY); }
+function applyT(){ gfx.setAttribute("viewBox", (camX-vw/2).toFixed(1)+" "+(camY-vh/2).toFixed(1)+" "+vw+" "+vh); }
+function updateFade(){
+  const mx=vw/2+820, my=vh/2+820;
+  for(const n of all){ const dx=n.cx-camX, dy=n.cy-camY, e=n._el;
+    if(Math.abs(dx)>mx || Math.abs(dy)>my){ if(e.style.display!=="none"){ e.style.display="none"; n._o=0; } continue; }
+    if(e.style.display==="none") e.style.display="";
+    const dd=Math.hypot(dx,dy);
+    const k = dd>UPDATE_R ? 0 : (1-smooth(NEAR,FAR,dd));         // target: 1 at the stop, 0 far off
+    n._o = (n._o||0) + (k-(n._o||0))*0.085;                      // ease toward it -> blocks fade in as they light up
+    const o=n._o;
+    e.style.opacity=(FLOOR+(1-FLOOR)*o).toFixed(3);
+    e.style.transform="translate("+(dx+vw/2).toFixed(1)+"px,"+(dy+vh/2+(1-o)*24).toFixed(1)+"px) translate(-50%,-50%)";
+    if(dd<ARRIVE && n.frac>maxFrac) maxFrac=n.frac; }
+  if(window.__trailLen) trail.style.strokeDashoffset=(window.__trailLen*(1-maxFrac)).toFixed(1);
+}
+const keys=new Set();
+function tok(k){ k=k.toLowerCase(); if(k==="arrowleft"||k==="a")return"L"; if(k==="arrowright"||k==="d")return"R"; if(k==="arrowup"||k==="w")return"U"; if(k==="arrowdown"||k==="s")return"D"; return null; }
+addEventListener("keydown",e=>{ const t=tok(e.key); if(t){keys.add(t); e.preventDefault();} });
+addEventListener("keyup",e=>{ const t=tok(e.key); if(t)keys.delete(t); });
+let dragging=false,lastX=0,lastY=0;
+viewport.addEventListener("pointerdown",e=>{ dragging=true; viewport.classList.add("grabbing"); lastX=e.clientX; lastY=e.clientY; vx=vy=0; viewport.setPointerCapture(e.pointerId); });
+viewport.addEventListener("pointermove",e=>{ if(!dragging)return; const dx=e.clientX-lastX, dy=e.clientY-lastY; camX-=dx; camY-=dy; vx=-dx; vy=-dy; lastX=e.clientX; lastY=e.clientY; clampCam(); });
+function endDrag(){ dragging=false; viewport.classList.remove("grabbing"); }
+viewport.addEventListener("pointerup",endDrag); viewport.addEventListener("pointercancel",endDrag);
+viewport.addEventListener("wheel",e=>{ e.preventDefault(); vx+=e.deltaX*WHEEL_K; vy+=e.deltaY*WHEEL_K; },{passive:false});
+function frame(){
+  if(keys.size){ if(keys.has("L"))vx-=KEY_ACC; if(keys.has("R"))vx+=KEY_ACC; if(keys.has("U"))vy-=KEY_ACC; if(keys.has("D"))vy+=KEY_ACC; }
+  vx=clamp(vx,-MAXV,MAXV); vy=clamp(vy,-MAXV,MAXV);
+  if(!dragging){ camX+=vx; camY+=vy; vx*=FRICTION; vy*=FRICTION; if(Math.abs(vx)<0.01)vx=0; if(Math.abs(vy)<0.01)vy=0; }
+  clampCam(); applyT(); updateFade();
+  requestAnimationFrame(frame);
+}
+/* drifting petals */
+if(!PR){ for(let i=0;i<4;i++){ const p=document.createElement("div"); p.className="petal"; p.style.left=rr(0,100)+"vw"; p.style.animationDuration=rr(9,16)+"s"; p.style.animationDelay=rr(0,12)+"s"; document.body.appendChild(p); } }
+/* boot */
+function boot(){
+  gfx.setAttribute("width",vw); gfx.setAttribute("height",vh);
+  buildLoop(); layout(); buildEdges(); buildGraphics(); buildText(); computeBounds();
+  camX=gateway.cx; camY=gateway.cy; clampCam(); applyT(); updateFade();
+  requestAnimationFrame(frame);
+}
+addEventListener("resize",()=>{ vw=window.innerWidth; vh=window.innerHeight; gfx.setAttribute("width",vw); gfx.setAttribute("height",vh); applyT(); updateFade(); });
+boot();
+</script>
+</body>
+</html>
